@@ -1,0 +1,18 @@
+# Laptop (VS Code) dependencies — sensors + dashboard.
+# These are all lightweight and run fine on a CPU-limited machine.
+# The laptop only LOADS the trained model; it never trains.
+
+# --- Telemetry sensors ---
+psutil>=5.9            # CPU, RAM, processes, network sockets (cross-platform)
+watchdog>=3.0          # file-system create/delete event monitoring
+
+# --- Data handling / model loading ---
+pandas>=2.0            # feature vectors, event tables
+scikit-learn>=1.3      # must match the version used in Colab to load model.pkl
+joblib>=1.3            # load the trained model.pkl produced in Colab
+
+# --- Dashboard ---
+streamlit>=1.30        # real-time SOC dashboard
+
+# Note: keep scikit-learn's version aligned with requirements-colab.txt to avoid
+# "InconsistentVersionWarning" or load failures when opening model.pkl.

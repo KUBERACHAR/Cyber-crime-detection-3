@@ -1,0 +1,29 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- Virtual environments ---
+.venv/
+venv/
+env/
+
+# --- Secrets / local config ---
+.env
+*.local
+
+# --- OS noise ---
+Thumbs.db
+.DS_Store
+
+# --- Raw telemetry (may contain machine-specific info; do not commit by default) ---
+# When you need a labeled sample in Colab, force-add just that file:
+#   git add -f data/processed/sample_dataset.csv
+data/raw/
+data/processed/*.csv
+
+# --- Large / generated artifacts ---
+# The trained model IS committed (small), so it is NOT ignored:
+#   models/model.pkl  <-- intentionally tracked
+*.log
