@@ -25,6 +25,7 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from common.features import FEATURE_COLUMNS, SUSPICIOUS_PROCESS_NAMES, LABEL_SUSPICIOUS, to_vector
+from common.response import list_kill_candidates, terminate_pid
 from sensors.collector import build_feature_row
 from sensors.file_sensor import FileMonitor
 
@@ -105,6 +106,10 @@ default_watch = os.path.join(os.path.expanduser("~"), "Downloads")
 watch_dir = st.sidebar.text_input("Watched directory", value=default_watch)
 threshold = st.sidebar.slider("Alert threshold", 0.0, 1.0, 0.7, 0.05)
 running = st.sidebar.toggle("Live monitoring", value=True)
+st.sidebar.divider()
+allow_terminate = st.sidebar.toggle("Allow process termination", value=True)
+st.sidebar.caption("When ON, an alert lets you terminate a flagged process after "
+                    "confirming. Core system processes are always protected.")
 
 # --- Persistent state across reruns ---
 if "monitor" not in st.session_state or st.session_state.get("watch_dir") != watch_dir:
@@ -121,6 +126,9 @@ if "monitor" not in st.session_state or st.session_state.get("watch_dir") != wat
     st.session_state.prev_pids = set()
     st.session_state.history = deque(maxlen=60)
 
+st.session_state.setdefault("actions", [])   # audit log of response actions
+st.session_state.setdefault("snooze_until", 0.0)  # timestamp until which alerts are ignored
+
 monitor = st.session_state.monitor
 
 # --- Header ---
@@ -135,12 +143,41 @@ row, st.session_state.prev_pids, host = build_feature_row(
 score = model_score(row, bundle) if bundle else heuristic_score(row)
 st.session_state.history.append(score)
 
+# --- Threat evaluation & response decision ---
+alert_active = score >= threshold
+candidates = list_kill_candidates(host) if alert_active else []
+# "Holding" pauses the auto-refresh so the user can act on the alert without the
+# page reloading under them. Snoozing (Ignore) lifts the hold for a short window.
+holding = alert_active and time.time() > st.session_state.snooze_until
+
 # --- Layout ---
 left, right = st.columns([1, 2])
 with left:
     st.markdown(render_gauge(score), unsafe_allow_html=True)
-    if score >= threshold:
+    if alert_active:
         st.error(f"🚨 ALERT — suspicious activity detected ({int(score*100)}%)")
+        if candidates:
+            st.markdown("**Permission required — terminate a flagged process?**")
+            for proc in candidates:
+                col_name, col_btn = st.columns([3, 2])
+                col_name.write(f"`{proc['name']}` · PID {proc['pid']} · {proc.get('username') or '—'}")
+                if col_btn.button("Terminate", key=f"kill_{proc['pid']}",
+                                  type="primary", disabled=not allow_terminate):
+                    ok, msg = terminate_pid(proc["pid"])
+                    stamp = time.strftime("%H:%M:%S")
+                    st.session_state.actions.append(f"[{stamp}] {msg}")
+                    (st.success if ok else st.error)(msg)
+                    st.session_state.prev_pids.discard(proc["pid"])
+                    time.sleep(0.6)  # let the OS reap the process before the rerun
+                    st.rerun()
+            if not allow_terminate:
+                st.caption("Enable **Allow process termination** in the sidebar to act.")
+        else:
+            st.info("No specific terminable process identified this window "
+                    "(e.g. file-burst activity is not tied to a PID). Review manually.")
+        if st.button("Ignore for 30s & keep monitoring", key="snooze"):
+            st.session_state.snooze_until = time.time() + 30
+            st.rerun()
 
 with right:
     c1, c2, c3 = st.columns(3)
@@ -174,7 +211,16 @@ with col_b:
         use_container_width=True, hide_index=True,
     )
 
-# --- Auto-refresh: rerun after the interval so controls stay responsive ---
-if running:
+if st.session_state.actions:
+    with st.expander(f"Response action log ({len(st.session_state.actions)})"):
+        for entry in reversed(st.session_state.actions[-20:]):
+            st.write("- " + entry)
+
+# --- Auto-refresh ---
+# Pause while holding for a termination decision so buttons stay responsive and the
+# alert doesn't scroll away; otherwise refresh on the chosen interval.
+if running and not holding:
     time.sleep(interval)
     st.rerun()
+elif holding:
+    st.caption("⏸ Monitoring paused — awaiting your decision on the alert above.")

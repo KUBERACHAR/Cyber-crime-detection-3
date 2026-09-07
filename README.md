@@ -35,7 +35,10 @@ Cyber-project/
 ├── requirements.txt         # laptop dependencies (sensors + dashboard)
 ├── requirements-colab.txt   # Colab dependencies (ML training)
 ├── .gitignore
-├── sensors/                 # host, network, and file-system sensors
+├── common/                  # shared feature definition + active-response logic
+├── sensors/                 # host, network, file-system sensors + collector
+├── simulations/             # safe attack simulations for generating labeled data
+├── training/                # model training pipeline (Random Forest + Isolation Forest)
 ├── data/
 │   ├── raw/                 # collected telemetry logs (git-ignored by default)
 │   └── processed/           # cleaned feature CSVs for training
@@ -44,7 +47,8 @@ Cyber-project/
 ├── notebooks/
 │   └── train_model.ipynb    # Colab training notebook
 └── docs/
-    └── ROADMAP.md           # full step-by-step development guide
+    ├── ROADMAP.md           # full step-by-step development guide
+    └── COMMANDS.md          # command cheat-sheet
 ```
 
 ---
@@ -70,7 +74,12 @@ Cyber-project/
 ## Scope
 
 **In scope:** endpoint resource tracking, network connection tracking, file
-create/delete events, supervised ML classification, real-time dashboard.
+create/delete events, supervised ML classification, real-time dashboard, and
+**human-in-the-loop active response** — on an alert the dashboard asks permission
+and terminates a flagged process only after the user confirms (see
+[`common/response.py`](common/response.py)). Core system processes and the monitor
+itself are always protected.
 
-**Out of scope:** kernel/Ring-0 inspection, automated response/isolation, TLS
-payload decryption, multi-tenant cloud database sync.
+**Out of scope:** kernel/Ring-0 inspection, *automated* (no-confirmation) response
+or remote endpoint isolation, TLS payload decryption, multi-tenant cloud database
+sync.

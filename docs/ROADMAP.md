@@ -152,7 +152,8 @@ or PowerShell simulation flips the dashboard to a red high-threat alert.
 ## Out of scope (per spec — do not build)
 
 - Kernel-level / Ring-0 memory inspection or driver development.
-- Automated active response or remote endpoint isolation.
+- Fully automated (no-confirmation) response or remote endpoint isolation.
+  (Human-in-the-loop termination IS now built into the dashboard — see common/response.py.)
 - Deep packet payload decryption of SSL/TLS traffic.
 - Multi-tenant enterprise cloud database cluster sync.
 

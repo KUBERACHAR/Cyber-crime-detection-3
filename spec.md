@@ -57,10 +57,13 @@ Minimize false positive rates during standard routine workflows (e.g., browsing,
  - Network connection tracking (Source/Destination IP, Port numbers, TCP states).
  - File system creation and deletion events in targeted directory paths via Watchdog.
  - Supervised AI classification model trained on lightweight event dataset.
+ - Human-in-the-loop active response: on a threat alert, the dashboard requests
+   user permission and terminates the confirmed process (core system processes
+   and the monitor itself are always protected).
 
  2. Out-of-Scope Elements
  - Kernel-level driver development or Ring-0 deep memory inspection.
- - Automated active response or remote endpoint isolation capabilities.
+ - Fully automated (no-confirmation) response or remote endpoint isolation.
  - Deep packet payload decryption for SSL/TLS encrypted traffic channels.
  - Multi-tenant enterprise cloud database cluster synchronization.
  
@@ -74,3 +77,6 @@ Powershell script starts, spawning rapid file additions in Downloads.
 Feature vector extracted; ML predicts 92% threat probability score.
 4. Dashboard Alert
 Streamlit UI displays red threat alert with diagnostic metrics.
+5. Guided Response
+UI lists the flagged process and asks permission; on user confirmation it
+terminates the process and records the action in the response log.
