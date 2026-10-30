@@ -13,6 +13,7 @@ is demoable before training.
 from __future__ import annotations
 
 import os
+import subprocess
 import sys
 import time
 from collections import deque
@@ -30,8 +31,24 @@ from sensors.collector import build_feature_row
 from sensors.file_sensor import FileMonitor
 
 MODEL_PATH = os.path.join(_ROOT, "models", "model.pkl")
+POPUP_PATH = os.path.join(_ROOT, "alerts", "popup.py")
 
 st.set_page_config(page_title="Cyber Crime Observation Device", page_icon="🛡️", layout="wide")
+
+
+def _pythonw() -> str:
+    """Prefer pythonw.exe so the popup process shows no console window."""
+    cand = os.path.join(os.path.dirname(sys.executable), "pythonw.exe")
+    return cand if os.path.exists(cand) else sys.executable
+
+
+def fire_desktop_popup(pct: int, url: str) -> None:
+    """Launch the standalone floating-alert popup as a detached process."""
+    flags = getattr(subprocess, "CREATE_NO_WINDOW", 0)  # suppress console flash on Windows
+    try:
+        subprocess.Popen([_pythonw(), POPUP_PATH, str(pct), url], creationflags=flags)
+    except Exception:
+        pass  # popup is a convenience; never let it break monitoring
 
 
 @st.cache_resource
@@ -110,6 +127,9 @@ st.sidebar.divider()
 allow_terminate = st.sidebar.toggle("Allow process termination", value=True)
 st.sidebar.caption("When ON, an alert lets you terminate a flagged process after "
                     "confirming. Core system processes are always protected.")
+popup_alerts = st.sidebar.toggle("Desktop pop-up alert", value=True)
+st.sidebar.caption("Shows a floating on-screen warning when a threat is detected, "
+                   "even if this dashboard is in the background.")
 
 # --- Persistent state across reruns ---
 if "monitor" not in st.session_state or st.session_state.get("watch_dir") != watch_dir:
@@ -128,6 +148,7 @@ if "monitor" not in st.session_state or st.session_state.get("watch_dir") != wat
 
 st.session_state.setdefault("actions", [])   # audit log of response actions
 st.session_state.setdefault("snooze_until", 0.0)  # timestamp until which alerts are ignored
+st.session_state.setdefault("popup_shown", False)  # popup fires once per attack episode
 
 monitor = st.session_state.monitor
 
@@ -149,6 +170,16 @@ candidates = list_kill_candidates(host) if alert_active else []
 # "Holding" pauses the auto-refresh so the user can act on the alert without the
 # page reloading under them. Snoozing (Ignore) lifts the hold for a short window.
 holding = alert_active and time.time() > st.session_state.snooze_until
+
+# Desktop floating alert: fire once when an attack episode begins, reset when it
+# clears -- so it pops up on a new attack rather than every refresh.
+if alert_active and not st.session_state.popup_shown:
+    if popup_alerts:
+        port = st.get_option("server.port") or 8501
+        fire_desktop_popup(int(score * 100), f"http://localhost:{port}")
+    st.session_state.popup_shown = True
+elif not alert_active:
+    st.session_state.popup_shown = False
 
 # --- Layout ---
 left, right = st.columns([1, 2])
