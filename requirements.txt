@@ -11,8 +11,8 @@ pandas>=2.0            # feature vectors, event tables
 scikit-learn>=1.3      # must match the version used in Colab to load model.pkl
 joblib>=1.3            # load the trained model.pkl produced in Colab
 
-# --- Dashboard ---
-streamlit>=1.30        # real-time SOC dashboard
+# --- Dashboard (Flask web UI — replaces Streamlit) ---
+flask>=3.0             # lightweight WSGI web framework for the desktop SOC dashboard
 
 # Note: keep scikit-learn's version aligned with requirements-colab.txt to avoid
 # "InconsistentVersionWarning" or load failures when opening model.pkl.

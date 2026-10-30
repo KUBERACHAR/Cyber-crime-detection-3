@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI-Based Cyber Crime Observation Device | SOC Dashboard</title>
+  <meta name="description" content="Real-time AI-powered Security Operations Center dashboard for detecting cyber threats, monitoring system processes, network connections and file activity." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <!-- ─── Animated background particles ─── -->
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="scan-line" aria-hidden="true"></div>
+
+  <!-- ─── Sidebar ─── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div class="logo-text">
+        <span class="logo-title">CCOD</span>
+        <span class="logo-sub">Cyber Crime Observation Device</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="nav-item" id="nav-processes" onclick="showSection('processes')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        <span>Processes</span>
+      </button>
+      <button class="nav-item" id="nav-features" onclick="showSection('features')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Feature Vector</span>
+      </button>
+      <button class="nav-item" id="nav-log" onclick="showSection('log')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        <span>Action Log</span>
+      </button>
+      <button class="nav-item" id="nav-settings" onclick="showSection('settings')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        <span>Settings</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-status">
+      <div class="status-dot" id="statusDot"></div>
+      <div class="status-info">
+        <span id="statusLabel" class="status-label">Connecting…</span>
+        <span id="scorerLabel" class="status-scorer"></span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ─── Main content ─── -->
+  <main class="main-content">
+
+    <!-- ── Top bar ── -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 id="sectionTitle">Dashboard</h1>
+        <span class="topbar-subtitle" id="watchDirLabel">Watching: —</span>
+      </div>
+      <div class="topbar-right">
+        <div class="clock" id="clock"></div>
+        <div class="alert-badge" id="alertBadge" style="display:none">
+          <span>🚨 THREAT</span>
+        </div>
+        <button class="btn-toggle-sidebar" onclick="toggleSidebar()" aria-label="Toggle sidebar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ══════════════════════════════════
+         SECTION: Dashboard
+    ══════════════════════════════════ -->
+    <section class="section active" id="section-dashboard">
+
+      <!-- Threat gauge + metrics row -->
+      <div class="grid-row grid-cols-3">
+        <!-- Gauge card -->
+        <div class="card card-gauge">
+          <div class="card-label">THREAT SEVERITY</div>
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 200 120" id="gaugeSvg">
+              <!-- Track -->
+              <path d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#1e293b" stroke-width="16" stroke-linecap="round"/>
+              <!-- Fill -->
+              <path d="M 20 110 A 90 90 0 0 1 180 110" fill="none" stroke="#16a34a" stroke-width="16" stroke-linecap="round"
+                    id="gaugeArc" stroke-dasharray="0 283" style="transition:stroke-dasharray 0.6s ease, stroke 0.6s ease"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-pct" id="gaugePct">0%</div>
+              <div class="gauge-level" id="gaugeLevel">NORMAL</div>
+            </div>
+          </div>
+          <div id="alertBox" class="alert-box" style="display:none">
+            <div class="alert-title">🚨 SUSPICIOUS ACTIVITY DETECTED</div>
+            <div class="alert-actions" id="alertActions"></div>
+            <button class="btn-snooze" id="snoozeBtn" onclick="snooze()">Ignore for 30s &amp; keep monitoring</button>
+          </div>
+        </div>
+
+        <!-- Metrics 2×3 grid -->
+        <div class="card card-metrics span-2">
+          <div class="metrics-grid">
+            <div class="metric-tile" id="m-cpu">
+              <div class="metric-icon cpu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><line x1="9" y1="2" x2="9" y2="4"/><line x1="15" y1="2" x2="15" y2="4"/><line x1="9" y1="20" x2="9" y2="22"/><line x1="15" y1="20" x2="15" y2="22"/><line x1="2" y1="9" x2="4" y2="9"/><line x1="2" y1="15" x2="4" y2="15"/><line x1="20" y1="9" x2="22" y2="9"/><line x1="20" y1="15" x2="22" y2="15"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-cpu">0%</div>
+                <div class="metric-name">CPU Usage</div>
+              </div>
+              <div class="metric-bar"><div class="metric-fill" id="bar-cpu" style="width:0%"></div></div>
+            </div>
+            <div class="metric-tile" id="m-ram">
+              <div class="metric-icon ram-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 19v-3"/><path d="M10 19v-3"/><path d="M14 19v-3"/><path d="M18 19v-3"/><path d="M8 11V9"/><path d="M16 11V9"/><path d="M12 11V9"/><path d="M2 15h20"/><path d="M2 7a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v1.1a2 2 0 0 0 0 3.837V17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-5.1a2 2 0 0 0 0-3.8V7z"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-ram">0%</div>
+                <div class="metric-name">RAM Usage</div>
+              </div>
+              <div class="metric-bar"><div class="metric-fill" id="bar-ram" style="width:0%"></div></div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-icon proc-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-procs">0</div>
+                <div class="metric-name">Processes</div>
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-icon file-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-frate">0/s</div>
+                <div class="metric-name">File Events/s</div>
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-icon spawn-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-newp">0</div>
+                <div class="metric-name">New Processes</div>
+              </div>
+            </div>
+            <div class="metric-tile">
+              <div class="metric-icon net-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"/><circle cx="5" cy="19" r="3"/><circle cx="19" cy="19" r="3"/><path d="M12 8v13M5 16.5 12 8l7 8.5"/></svg>
+              </div>
+              <div class="metric-data">
+                <div class="metric-val" id="val-conn">0</div>
+                <div class="metric-name">Connections</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Threat history chart -->
+      <div class="card card-chart">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Threat Score History
+          </span>
+          <span class="card-badge" id="historyCount">0 samples</span>
+        </div>
+        <canvas id="historyChart" height="90"></canvas>
+      </div>
+
+    </section>
+
+    <!-- ══════════════════════════════════
+         SECTION: Processes
+    ══════════════════════════════════ -->
+    <section class="section" id="section-processes">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+            Flagged Processes (LOLBins)
+          </span>
+          <span class="card-badge danger" id="flaggedCount">0 flagged</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="flaggedTable">
+            <thead>
+              <tr><th>PID</th><th>PPID</th><th>Name</th><th>User</th><th>Action</th></tr>
+            </thead>
+            <tbody id="flaggedBody">
+              <tr><td colspan="5" class="empty-cell">No flagged processes in this window.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="terminate-notice" id="terminateNotice" style="display:none">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Enable <strong>Allow process termination</strong> in Settings to act on flagged processes.
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         SECTION: Feature Vector
+    ══════════════════════════════════ -->
+    <section class="section" id="section-features">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+            Current Feature Vector
+          </span>
+          <span class="card-badge">Live</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="featureTable">
+            <thead>
+              <tr><th>Feature</th><th>Value</th><th>Visual</th></tr>
+            </thead>
+            <tbody id="featureBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         SECTION: Action Log
+    ══════════════════════════════════ -->
+    <section class="section" id="section-log">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            Response Action Log
+          </span>
+          <span class="card-badge" id="logCount">0 entries</span>
+        </div>
+        <div class="log-list" id="logList">
+          <div class="log-empty">No actions recorded yet.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════════════════════════
+         SECTION: Settings
+    ══════════════════════════════════ -->
+    <section class="section" id="section-settings">
+      <div class="settings-grid">
+
+        <div class="card settings-card">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Monitoring
+          </div>
+          <div class="setting-row">
+            <label for="liveMon">Live Monitoring</label>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="liveMon" checked onchange="saveSetting('running', this.checked)" />
+              <span class="toggle-track"></span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <label for="intervalSlider">Refresh Interval</label>
+              <div class="setting-hint">How often to sample telemetry</div>
+            </div>
+            <div class="slider-group">
+              <input type="range" id="intervalSlider" min="1" max="5" step="0.5" value="2"
+                     oninput="document.getElementById('intervalVal').textContent=this.value+'s';saveSetting('interval',parseFloat(this.value))" />
+              <span id="intervalVal" class="slider-val">2s</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <label for="thresholdSlider">Alert Threshold</label>
+              <div class="setting-hint">Score above which an alert fires</div>
+            </div>
+            <div class="slider-group">
+              <input type="range" id="thresholdSlider" min="0" max="1" step="0.05" value="0.7"
+                     oninput="document.getElementById('thresholdVal').textContent=(parseFloat(this.value)*100).toFixed(0)+'%';saveSetting('threshold',parseFloat(this.value))" />
+              <span id="thresholdVal" class="slider-val">70%</span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <label for="watchDirInput">Watched Directory</label>
+              <div class="setting-hint">Directory monitored for file events</div>
+            </div>
+            <div class="dir-group">
+              <input type="text" id="watchDirInput" class="text-input" placeholder="C:\Users\...\Downloads"
+                     onchange="saveSetting('watch_dir', this.value)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="card settings-card">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            Response &amp; Alerts
+          </div>
+          <div class="setting-row">
+            <div>
+              <label for="allowTerminate">Allow Process Termination</label>
+              <div class="setting-hint">Enables kill buttons on flagged processes</div>
+            </div>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="allowTerminate" checked onchange="saveSetting('allow_terminate', this.checked)" />
+              <span class="toggle-track"></span>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div>
+              <label for="popupAlerts">Desktop Pop-up Alert</label>
+              <div class="setting-hint">Shows floating warning when threat detected</div>
+            </div>
+            <div class="toggle-wrap">
+              <input type="checkbox" id="popupAlerts" checked onchange="saveSetting('popup_alerts', this.checked)" />
+              <span class="toggle-track"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card settings-card model-card">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>
+            Model Status
+          </div>
+          <div class="model-status" id="modelStatus">Loading…</div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ─── Toast notifications ─── -->
+  <div class="toast-area" id="toastArea"></div>
+
+  <!-- ─── Confirm modal ─── -->
+  <div class="modal-overlay" id="confirmModal" style="display:none">
+    <div class="modal-box">
+      <div class="modal-icon">⚠️</div>
+      <h2 class="modal-title" id="modalTitle">Terminate Process?</h2>
+      <p class="modal-body" id="modalBody"></p>
+      <div class="modal-btns">
+        <button class="btn btn-danger" id="modalConfirmBtn">Terminate</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
